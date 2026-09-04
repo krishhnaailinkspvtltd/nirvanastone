@@ -4,8 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
 import { useMemo, useState } from "react";
-import { site } from "@/config/site";
-import { rememberOrder, useCart } from "@/context/cart";
+import { rememberOrder, useCart, useCartLines } from "@/context/cart";
 import { formatINR } from "@/lib/catalog";
 import { codEligible } from "@/lib/cod";
 import type { PaymentMethod, ShippingAddress } from "@/lib/types";
@@ -28,7 +27,8 @@ const EMPTY: ShippingAddress = {
 };
 
 export default function CheckoutPage() {
-  const { lines, subtotal, clear, hydrated } = useCart();
+  const { clear, hydrated } = useCart();
+  const { lines, subtotal, settings, loading } = useCartLines();
   const router = useRouter();
   const [address, setAddress] = useState<ShippingAddress>(EMPTY);
   const [method, setMethod] = useState<PaymentMethod>("razorpay");
@@ -38,16 +38,18 @@ export default function CheckoutPage() {
   const promoCode =
     typeof window !== "undefined" ? localStorage.getItem("nrv-promo") : null;
   // Display estimate only — the server re-prices and re-validates everything.
-  const shipping =
-    subtotal >= site.freeShippingAbove || subtotal === 0 ? 0 : site.shippingFee;
+  const freeAbove = settings?.freeShippingAbove ?? 999;
+  const fee = settings?.shippingFee ?? 79;
+  const codCap = settings?.codOrderCap ?? 5000;
+  const shipping = subtotal >= freeAbove || subtotal === 0 ? 0 : fee;
   const estTotal = subtotal + shipping;
 
   const cod = useMemo(
     () =>
       address.pincode.replace(/\D/g, "").length === 6
-        ? codEligible(address.pincode, estTotal)
+        ? codEligible(address.pincode, estTotal, codCap)
         : null,
-    [address.pincode, estTotal],
+    [address.pincode, estTotal, codCap],
   );
 
   const set = (k: keyof ShippingAddress) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -142,7 +144,7 @@ export default function CheckoutPage() {
     }
   }
 
-  if (!hydrated) {
+  if (!hydrated || (loading && lines.length === 0)) {
     return <div className="mx-auto max-w-3xl px-4 py-20 text-center text-mist">Loading checkout…</div>;
   }
 
@@ -251,7 +253,7 @@ export default function CheckoutPage() {
                   </span>
                   <span className="block text-xs text-mist">
                     We confirm COD orders on WhatsApp before dispatch. Available up to{" "}
-                    {formatINR(site.codOrderCap)} on serviceable pincodes.
+                    {formatINR(codCap)} on serviceable pincodes.
                   </span>
                 </span>
               </label>
@@ -271,8 +273,8 @@ export default function CheckoutPage() {
             {lines.map((l) => (
               <li key={`${l.productId}:${l.variantId}`} className="flex justify-between gap-3">
                 <span className="text-ink">
-                  {l.product.name}
-                  {l.variant ? ` (${l.variant.variant_name})` : ""} ×{l.qty}
+                  {l.name}
+                  {l.variant_name ? ` (${l.variant_name})` : ""} ×{l.qty}
                 </span>
                 <span className="shrink-0 font-bold">{formatINR(l.lineTotal)}</span>
               </li>

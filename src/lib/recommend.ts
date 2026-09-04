@@ -1,5 +1,5 @@
 import "server-only";
-import { allProducts, discountPct } from "@/lib/catalog";
+import { discountPct } from "@/lib/catalog";
 import { PURPOSES, ZODIACS } from "@/lib/taxonomy";
 import type { Product, Purpose, Zodiac } from "@/lib/types";
 
@@ -45,8 +45,12 @@ export function inferConcern(text: string): Purpose | null {
   return best;
 }
 
-/** Score + shortlist candidates from the real catalog. */
-export function candidates(input: RecommendInput, limit = 12): Product[] {
+/** Score + shortlist candidates from the live catalog. */
+export function candidates(
+  allProducts: Product[],
+  input: RecommendInput,
+  limit = 12,
+): Product[] {
   const concern =
     input.concern ?? (input.freeText ? inferConcern(input.freeText) : null);
   const budget = input.budget ? BUDGETS[input.budget] : null;

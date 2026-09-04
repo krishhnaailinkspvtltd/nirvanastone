@@ -26,8 +26,12 @@ export const promos: Promo[] = [
   },
 ];
 
-export function computeDiscount(code: string, subtotal: number) {
-  const promo = promos.find((p) => p.code === code.trim().toUpperCase());
+export function computeDiscount(
+  code: string,
+  subtotal: number,
+  promoList: Promo[] = promos,
+) {
+  const promo = promoList.find((p) => p.code === code.trim().toUpperCase());
   if (!promo) return { ok: false as const, error: "That code isn't valid." };
   if (subtotal < promo.minSubtotal)
     return {

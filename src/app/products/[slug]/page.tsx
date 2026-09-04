@@ -12,20 +12,17 @@ import { site } from "@/config/site";
 import { certificates } from "@/data/certificates";
 import { categoryFaqs } from "@/data/faqs";
 import {
-  allProducts,
   getProduct,
   getProductById,
   productReviews,
   ratingSummary,
   relatedProducts,
 } from "@/lib/catalog";
+import { getCatalog } from "@/lib/catalog-store";
 import { CATEGORIES } from "@/lib/taxonomy";
 
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return allProducts.map((p) => ({ slug: p.slug }));
-}
+// Catalog is runtime-editable from /admin — render per request.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -33,7 +30,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const p = getProduct(slug);
+  const p = getProduct(await getCatalog(), slug);
   if (!p) return {};
   return {
     title: p.name,
@@ -86,16 +83,19 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const p = getProduct(slug);
+  const catalog = await getCatalog();
+  const p = getProduct(catalog, slug);
   if (!p) notFound();
 
   const { count, avg } = ratingSummary(p.id);
   const revs = productReviews(p.id);
-  const related = relatedProducts(p);
+  const related = relatedProducts(catalog, p);
   const faqs = categoryFaqs[p.category];
   const sampleCert = certificates.find((c) => c.product_id === p.id);
   const comboItems = p.is_combo
-    ? (p.combo_item_ids ?? []).map(getProductById).filter((x) => x !== undefined)
+    ? (p.combo_item_ids ?? [])
+        .map((id) => getProductById(catalog, id))
+        .filter((x) => x !== undefined)
     : [];
 
   return (

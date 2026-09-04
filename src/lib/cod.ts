@@ -1,7 +1,13 @@
 import { site } from "@/config/site";
 
-/** Pincode-serviceability + order-value gate for Cash on Delivery. */
-export function codEligible(pincode: string, orderValue: number) {
+/** Pincode-serviceability + order-value gate for Cash on Delivery.
+ *  The cap defaults to the code constant; callers with runtime settings
+ *  (checkout API, checkout page) pass the admin-configured value. */
+export function codEligible(
+  pincode: string,
+  orderValue: number,
+  cap: number = site.codOrderCap,
+) {
   const clean = pincode.replace(/\D/g, "");
   if (clean.length !== 6)
     return { ok: false, reason: "Enter a valid 6-digit pincode." };
@@ -11,10 +17,10 @@ export function codEligible(pincode: string, orderValue: number) {
       ok: false,
       reason: "COD isn't serviceable at this pincode yet — prepaid works everywhere.",
     };
-  if (orderValue > site.codOrderCap)
+  if (orderValue > cap)
     return {
       ok: false,
-      reason: `COD is available up to ₹${site.codOrderCap.toLocaleString("en-IN")}. Please pay online for this order.`,
+      reason: `COD is available up to ₹${cap.toLocaleString("en-IN")}. Please pay online for this order.`,
     };
   return { ok: true, reason: "" };
 }

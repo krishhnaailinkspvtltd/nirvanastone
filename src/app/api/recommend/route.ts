@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { getProductById } from "@/lib/catalog";
+import { getCatalog } from "@/lib/catalog-store";
 import {
   candidates,
   ruleBasedPicks,
@@ -42,7 +43,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Invalid request." }, { status: 400 });
   }
 
-  const pool = candidates(input);
+  const catalog = await getCatalog();
+  const pool = candidates(catalog, input);
   if (pool.length === 0)
     return NextResponse.json({
       ok: true,
@@ -108,7 +110,7 @@ Rules — follow all of them:
         };
         const picks = (parsed.picks ?? [])
           .map((pk) => {
-            const product = getProductById(pk.id);
+            const product = getProductById(catalog, pk.id);
             // Only accept ids that were actually in the candidate pool.
             if (!product || !pool.some((c) => c.id === pk.id)) return null;
             if (typeof pk.reason !== "string" || pk.reason.length < 10) return null;

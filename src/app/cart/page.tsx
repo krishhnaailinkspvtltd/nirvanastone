@@ -3,12 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { site } from "@/config/site";
-import { useCart } from "@/context/cart";
+import { useCart, useCartLines } from "@/context/cart";
 import { formatINR, isGeneratedArt } from "@/lib/catalog";
 
 export default function CartPage() {
-  const { lines, subtotal, setQty, remove, hydrated } = useCart();
+  const { setQty, remove, hydrated } = useCart();
+  const { lines, subtotal, settings, loading } = useCartLines();
   const [code, setCode] = useState("");
   const [promo, setPromo] = useState<{ code: string; discount: number; description: string } | null>(null);
   const [promoError, setPromoError] = useState("");
@@ -45,14 +45,14 @@ export default function CartPage() {
     }
   }
 
+  const freeAbove = settings?.freeShippingAbove ?? 999;
+  const fee = settings?.shippingFee ?? 79;
   const discount = promo?.discount ?? 0;
   const shipping =
-    subtotal - discount >= site.freeShippingAbove || subtotal === 0
-      ? 0
-      : site.shippingFee;
+    subtotal - discount >= freeAbove || subtotal === 0 ? 0 : fee;
   const total = Math.max(0, subtotal - discount) + shipping;
 
-  if (!hydrated) {
+  if (!hydrated || (loading && lines.length === 0)) {
     return <div className="mx-auto max-w-3xl px-4 py-20 text-center text-mist">Loading your cart…</div>;
   }
 
@@ -87,22 +87,22 @@ export default function CartPage() {
               key={`${l.productId}:${l.variantId}`}
               className="flex gap-4 rounded-xl border border-sand bg-parchment p-3"
             >
-              <Link href={`/products/${l.product.slug}`} className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-parchment">
+              <Link href={`/products/${l.slug}`} className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-parchment">
                 <Image
-                  src={l.product.images[0].url}
-                  alt={l.product.images[0].alt}
+                  src={l.image.url}
+                  alt={l.image.alt}
                   fill
                   sizes="96px"
-                  unoptimized={isGeneratedArt(l.product.images[0].url)}
+                  unoptimized={isGeneratedArt(l.image.url)}
                   className="object-cover"
                 />
               </Link>
               <div className="flex min-w-0 flex-1 flex-col">
-                <Link href={`/products/${l.product.slug}`} className="font-display text-[15px] leading-snug text-maroon-deep hover:text-maroon">
-                  {l.product.name}
+                <Link href={`/products/${l.slug}`} className="font-display text-[15px] leading-snug text-maroon-deep hover:text-gold">
+                  {l.name}
                 </Link>
-                {l.variant && (
-                  <p className="text-xs text-mist">{l.variant.variant_name}</p>
+                {l.variant_name && (
+                  <p className="text-xs text-mist">{l.variant_name}</p>
                 )}
                 <p className="mt-1 text-sm font-bold text-ink">{formatINR(l.unitPrice)}</p>
                 <div className="mt-auto flex items-center gap-3 pt-2">
@@ -110,7 +110,7 @@ export default function CartPage() {
                     <button
                       type="button"
                       aria-label="Decrease quantity"
-                      className="px-2.5 py-1 font-bold text-maroon"
+                      className="px-2.5 py-1 font-bold text-gold"
                       onClick={() => setQty(l.productId, l.variantId, l.qty - 1)}
                     >
                       −
@@ -119,7 +119,7 @@ export default function CartPage() {
                     <button
                       type="button"
                       aria-label="Increase quantity"
-                      className="px-2.5 py-1 font-bold text-maroon"
+                      className="px-2.5 py-1 font-bold text-gold"
                       onClick={() => setQty(l.productId, l.variantId, l.qty + 1)}
                     >
                       +
@@ -127,7 +127,7 @@ export default function CartPage() {
                   </div>
                   <button
                     type="button"
-                    className="text-xs font-bold text-mist hover:text-maroon"
+                    className="text-xs font-bold text-mist hover:text-gold"
                     onClick={() => remove(l.productId, l.variantId)}
                   >
                     Remove
@@ -191,7 +191,7 @@ export default function CartPage() {
           </dl>
           {shipping > 0 && (
             <p className="mt-2 text-xs text-mist">
-              Add {formatINR(site.freeShippingAbove - (subtotal - discount))} more for free shipping.
+              Add {formatINR(freeAbove - (subtotal - discount))} more for free shipping.
             </p>
           )}
           <Link href="/checkout" className="btn btn-primary mt-5 w-full">

@@ -98,6 +98,15 @@ create table if not exists certificates (
 
 create index if not exists certificates_code_idx on certificates (certificate_code);
 
+-- ── kv_store ────────────────────────────────────────────────────────
+-- Admin-panel state: catalog overrides ('catalog-overrides') and store
+-- settings ('settings'). Accessed only via the service-role key.
+create table if not exists kv_store (
+  key text primary key,
+  value jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
 -- ── Row Level Security ──────────────────────────────────────────────
 -- The storefront's server routes use the service-role key (bypasses RLS).
 -- Lock the anon key down to read-only catalog data.
@@ -112,3 +121,5 @@ create policy "public read variants" on product_variants for select using (true)
 create policy "public read reviews" on reviews for select using (true);
 create policy "public read certificates" on certificates for select using (true);
 -- orders: NO anon policies — accessible only via service-role server routes.
+alter table kv_store enable row level security;
+-- kv_store: NO anon policies — admin/service-role only.

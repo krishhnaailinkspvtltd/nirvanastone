@@ -2,14 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CollectionView, type SearchParams } from "@/components/CollectionView";
 import { byPurpose } from "@/lib/catalog";
-import { PURPOSE_SLUGS, PURPOSES } from "@/lib/taxonomy";
+import { getCatalog } from "@/lib/catalog-store";
+import { PURPOSES } from "@/lib/taxonomy";
 import type { Purpose } from "@/lib/types";
 
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return PURPOSE_SLUGS.map((purpose) => ({ purpose }));
-}
+// Catalog is runtime-editable from /admin — render per request.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -35,11 +33,12 @@ export default async function PurposePage({
   const { purpose } = await params;
   const p = PURPOSES[purpose as Purpose];
   if (!p) notFound();
+  const catalog = await getCatalog();
   return (
     <CollectionView
       title={`For ${p.label}`}
       blurb={p.line}
-      products={byPurpose(purpose as Purpose)}
+      products={byPurpose(catalog, purpose as Purpose)}
       basePath={`/collections/purpose/${purpose}`}
       searchParams={await searchParams}
       showPurposeFilter={false}

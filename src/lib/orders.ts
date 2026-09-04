@@ -91,6 +91,36 @@ export async function getOrder(id: string): Promise<Order | null> {
   return orders.find((o) => o.id === id) ?? null;
 }
 
+/** All orders, newest first — powers the admin panel. */
+export async function listOrders(limit = 300): Promise<Order[]> {
+  const sb = supabase();
+  if (sb) {
+    const { data, error } = await sb
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) throw new Error(`Supabase order list failed: ${error.message}`);
+    return (data as Order[]) ?? [];
+  }
+  const orders = await readLocal();
+  return orders
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, limit);
+}
+
+/** Merge fields into an order (admin status updates). */
+export async function updateOrder(
+  id: string,
+  patch: Partial<Order>,
+): Promise<Order | null> {
+  const order = await getOrder(id);
+  if (!order) return null;
+  const next: Order = { ...order, ...patch, updated_at: new Date().toISOString() };
+  await saveOrder(next);
+  return next;
+}
+
 /** Guest tracking: order id + phone must both match. */
 export async function trackOrder(id: string, phone: string): Promise<Order | null> {
   const order = await getOrder(id.trim().toUpperCase());

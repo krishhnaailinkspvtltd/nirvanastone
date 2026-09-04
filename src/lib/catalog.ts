@@ -1,28 +1,32 @@
-import { products } from "@/data/products";
 import { reviews } from "@/data/reviews";
 import type { Category, Planet, Product, Purpose, Zodiac } from "./types";
 
-export const allProducts = products;
+/**
+ * Pure catalog helpers. Product-list helpers take the list as their first
+ * argument — server code passes the merged runtime catalog from
+ * lib/catalog-store (seed + admin edits), never the raw seed directly.
+ */
 
-export const getProduct = (slug: string) =>
+export const getProduct = (products: Product[], slug: string) =>
   products.find((p) => p.slug === slug);
 
-export const getProductById = (id: string) =>
+export const getProductById = (products: Product[], id: string) =>
   products.find((p) => p.id === id);
 
-export const byCategory = (category: Category) =>
+export const byCategory = (products: Product[], category: Category) =>
   products.filter((p) => p.category === category);
 
-export const byPurpose = (purpose: Purpose) =>
+export const byPurpose = (products: Product[], purpose: Purpose) =>
   products.filter((p) => p.purpose_tags.includes(purpose));
 
-export const byZodiac = (sign: Zodiac) =>
+export const byZodiac = (products: Product[], sign: Zodiac) =>
   products.filter((p) => p.zodiac_tags.includes(sign));
 
-export const byPlanet = (planet: Planet) =>
+export const byPlanet = (products: Product[], planet: Planet) =>
   products.filter((p) => p.planet_tags.includes(planet));
 
-export const bestsellers = () => products.filter((p) => p.bestseller);
+export const bestsellers = (products: Product[]) =>
+  products.filter((p) => p.bestseller);
 
 export function ratingSummary(productId: string) {
   const rs = reviews.filter((r) => r.product_id === productId);
@@ -36,8 +40,12 @@ export const productReviews = (productId: string) =>
     .filter((r) => r.product_id === productId)
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
 
-/** Related products: shared purpose or category, excluding self and combos containing self. */
-export function relatedProducts(p: Product, limit = 4): Product[] {
+/** Related products: shared purpose or category, excluding self. */
+export function relatedProducts(
+  products: Product[],
+  p: Product,
+  limit = 4,
+): Product[] {
   const scored = products
     .filter((x) => x.id !== p.id && x.stock_qty > 0)
     .map((x) => {
@@ -56,8 +64,7 @@ export function relatedProducts(p: Product, limit = 4): Product[] {
 export const discountPct = (p: { price: number; mrp: number }) =>
   p.mrp > p.price ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : 0;
 
-export const formatINR = (n: number) =>
-  "₹" + n.toLocaleString("en-IN");
+export const formatINR = (n: number) => "₹" + n.toLocaleString("en-IN");
 
 /** Local generated SVG art bypasses the Next image optimizer; photos don't. */
 export const isGeneratedArt = (url: string) => url.startsWith("/api/");

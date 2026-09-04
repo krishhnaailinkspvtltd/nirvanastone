@@ -9,9 +9,13 @@ import { site } from "@/config/site";
 import { blogPosts } from "@/data/blog";
 import { photoUrl } from "@/data/photos";
 import { testimonials } from "@/data/testimonials";
-import { allProducts, bestsellers } from "@/lib/catalog";
+import { bestsellers } from "@/lib/catalog";
+import { getCatalog } from "@/lib/catalog-store";
 import { CATEGORIES, PURPOSES, ZODIACS } from "@/lib/taxonomy";
 import type { Zodiac } from "@/lib/types";
+
+// Catalog is runtime-editable from /admin — render per request.
+export const dynamic = "force-dynamic";
 
 const slides: HeroSlide[] = [
   {
@@ -48,12 +52,13 @@ const slides: HeroSlide[] = [
   },
 ];
 
-export default function HomePage() {
-  const best = bestsellers().slice(0, 8);
+export default async function HomePage() {
+  const catalog = await getCatalog();
+  const best = bestsellers(catalog).slice(0, 8);
   const posts = [...blogPosts]
     .sort((a, b) => b.published_at.localeCompare(a.published_at))
     .slice(0, 3);
-  const productCount = Math.floor(allProducts.length / 10) * 10;
+  const productCount = Math.floor(catalog.length / 10) * 10;
 
   return (
     <div className="mx-auto max-w-6xl px-4">

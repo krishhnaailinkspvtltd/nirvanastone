@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { certificates } from "@/data/certificates";
 import { getProductById } from "@/lib/catalog";
+import { getCatalog } from "@/lib/catalog-store";
 
 /**
  * Certificate lookup — backed by a real dataset (seed today, the Supabase
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
       found: false,
     });
 
-  const product = getProductById(cert.product_id);
+  const product = getProductById(await getCatalog(), cert.product_id);
   return NextResponse.json({
     ok: true,
     found: true,

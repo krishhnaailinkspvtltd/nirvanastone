@@ -2,14 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CollectionView, type SearchParams } from "@/components/CollectionView";
 import { byCategory } from "@/lib/catalog";
-import { CATEGORIES, CATEGORY_SLUGS } from "@/lib/taxonomy";
+import { getCatalog } from "@/lib/catalog-store";
+import { CATEGORIES } from "@/lib/taxonomy";
 import type { Category } from "@/lib/types";
 
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return CATEGORY_SLUGS.map((category) => ({ category }));
-}
+// Catalog is runtime-editable from /admin — render per request.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -35,11 +33,12 @@ export default async function CategoryPage({
   const { category } = await params;
   const c = CATEGORIES[category as Category];
   if (!c) notFound();
+  const catalog = await getCatalog();
   return (
     <CollectionView
       title={c.label}
       blurb={c.blurb}
-      products={byCategory(category as Category)}
+      products={byCategory(catalog, category as Category)}
       basePath={`/collections/${category}`}
       searchParams={await searchParams}
     />

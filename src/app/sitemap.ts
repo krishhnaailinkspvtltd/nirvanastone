@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { site } from "@/config/site";
 import { blogPosts } from "@/data/blog";
-import { allProducts } from "@/lib/catalog";
+import { getCatalog } from "@/lib/catalog-store";
 import {
   CATEGORY_SLUGS,
   PLANET_SLUGS,
@@ -9,7 +9,8 @@ import {
   ZODIAC_SLUGS,
 } from "@/lib/taxonomy";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const allProducts = await getCatalog();
   const u = (path: string) => ({ url: `${site.url}${path}` });
   return [
     u("/"),

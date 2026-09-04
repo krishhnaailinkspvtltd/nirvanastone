@@ -9,8 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getProductById } from "@/lib/catalog";
-import type { Product, ProductVariant } from "@/lib/types";
+import type { ProductImage } from "@/lib/types";
 
 export interface CartItem {
   productId: string;
@@ -18,18 +17,26 @@ export interface CartItem {
   qty: number;
 }
 
-export interface CartLine extends CartItem {
-  product: Product;
-  variant: ProductVariant | null;
+/** A cart line as resolved by /api/cart/resolve against the LIVE catalog. */
+export interface ResolvedLine extends CartItem {
+  slug: string;
+  name: string;
+  variant_name: string | null;
   unitPrice: number;
   lineTotal: number;
+  image: ProductImage;
+  in_stock: boolean;
+}
+
+export interface CartSettings {
+  shippingFee: number;
+  freeShippingAbove: number;
+  codOrderCap: number;
 }
 
 interface CartCtx {
   items: CartItem[];
-  lines: CartLine[];
   count: number;
-  subtotal: number;
   add: (productId: string, variantId?: string | null, qty?: number) => void;
   setQty: (productId: string, variantId: string | null, qty: number) => void;
   remove: (productId: string, variantId: string | null) => void;
@@ -107,28 +114,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clear = useCallback(() => setItems([]), []);
 
-  const lines = useMemo<CartLine[]>(
-    () =>
-      items.flatMap((i) => {
-        const product = getProductById(i.productId);
-        if (!product) return [];
-        const variant =
-          product.variants?.find((v) => v.id === i.variantId) ?? null;
-        const unitPrice = product.price + (variant?.price_delta ?? 0);
-        return [{ ...i, product, variant, unitPrice, lineTotal: unitPrice * i.qty }];
-      }),
-    [items],
-  );
-
-  const subtotal = useMemo(
-    () => lines.reduce((s, l) => s + l.lineTotal, 0),
-    [lines],
-  );
-  const count = useMemo(() => lines.reduce((s, l) => s + l.qty, 0), [lines]);
+  const count = useMemo(() => items.reduce((s, i) => s + i.qty, 0), [items]);
 
   const value = useMemo(
-    () => ({ items, lines, count, subtotal, add, setQty, remove, clear, hydrated }),
-    [items, lines, count, subtotal, add, setQty, remove, clear, hydrated],
+    () => ({ items, count, add, setQty, remove, clear, hydrated }),
+    [items, count, add, setQty, remove, clear, hydrated],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
@@ -138,6 +128,47 @@ export function useCart() {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error("useCart must be used inside <CartProvider>");
   return ctx;
+}
+
+/** Server-resolved cart lines + live store settings (prices from /admin apply). */
+export function useCartLines() {
+  const { items, hydrated } = useCart();
+  const [lines, setLines] = useState<ResolvedLine[]>([]);
+  const [settings, setSettings] = useState<CartSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    let cancelled = false;
+    setLoading(true);
+    fetch("/api/cart/resolve", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ items }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled || !data.ok) return;
+        setLines(data.lines);
+        setSettings(data.settings);
+      })
+      .catch(() => {
+        /* keep previous state; totals recompute on next change */
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [items, hydrated]);
+
+  const subtotal = useMemo(
+    () => lines.reduce((s, l) => s + l.lineTotal, 0),
+    [lines],
+  );
+
+  return { lines, subtotal, settings, loading };
 }
 
 /** Order ids placed from this browser — powers /account/orders without auth. */

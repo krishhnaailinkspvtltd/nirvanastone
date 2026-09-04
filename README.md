@@ -54,6 +54,25 @@ degrades gracefully when unset:
 | `N8N_WEBHOOK_BASE_URL` (+ optional `N8N_WEBHOOK_TOKEN`) | Order-lifecycle webhooks → n8n → WhatsApp | Events logged to server console |
 | `NEXT_PUBLIC_SHOW_PLACEHOLDER_TAG=false` | Hides the PLACEHOLDER corner tag for screenshots | Tag shown (default) |
 
+## Admin panel (/admin)
+
+Sign in at `/admin` with `ADMIN_PASSWORD` (dev default: `admin123` — a
+warning banner shows until you set the real one). Everything is managed
+there and applies to the live store immediately, no rebuild:
+
+- **Dashboard** — orders, order value, COD queue, low-stock alerts
+- **Orders** — every purchase appears the moment it's placed; confirm COD,
+  mark shipped (with courier tracking ID), delivered, or cancelled;
+  status changes fire the n8n/WhatsApp webhooks; delivered COD auto-marks paid
+- **Products** — edit any of the 205 seed products (price, MRP, stock,
+  copy, tags, images, variants), hide them, reset them to original, or
+  create brand-new products; stock decrements automatically on each order
+- **Settings** — shipping fee, free-shipping threshold, COD cap, promo codes
+
+Admin state lives in the same dual store as orders: Supabase (`kv_store`
+table) when configured, local JSON otherwise (`/tmp` on Vercel — ephemeral
+there until Supabase is set up).
+
 ## Webhook events (n8n / WhatsApp phase)
 
 `POST {N8N_WEBHOOK_BASE_URL}/{event}` with JSON body, `Bearer` token optional:

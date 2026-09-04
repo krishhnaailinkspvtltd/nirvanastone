@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { site } from "@/config/site";
 import { getProductById } from "@/lib/catalog";
+import { adjustStockForOrder, getCatalog } from "@/lib/catalog-store";
 import { codEligible } from "@/lib/cod";
 import { newOrderId, saveOrder } from "@/lib/orders";
 import { computeDiscount } from "@/lib/promos";
+import { getSettings } from "@/lib/settings";
 import type { Order, OrderItem, PaymentMethod, ShippingAddress } from "@/lib/types";
 import { fireWebhook } from "@/lib/webhooks";
 
@@ -32,11 +34,13 @@ export async function POST(req: NextRequest) {
   if (!/^\d{10}$/.test(address.phone.replace(/\D/g, "").slice(-10)))
     return NextResponse.json({ ok: false, error: "Enter a valid 10-digit phone number." }, { status: 400 });
 
-  // Re-price everything server-side — never trust client totals.
+  // Re-price everything server-side against the LIVE catalog and settings
+  // (both are runtime-editable from /admin) — never trust client totals.
+  const [catalog, settings] = await Promise.all([getCatalog(), getSettings()]);
   const orderItems: OrderItem[] = [];
   let subtotal = 0;
   for (const i of items) {
-    const product = getProductById(i.productId);
+    const product = getProductById(catalog, i.productId);
     if (!product)
       return NextResponse.json({ ok: false, error: "A cart item no longer exists." }, { status: 400 });
     if (product.stock_qty <= 0)
@@ -58,7 +62,7 @@ export async function POST(req: NextRequest) {
   let discount = 0;
   let appliedPromo: string | null = null;
   if (promoCode) {
-    const res = computeDiscount(promoCode, subtotal);
+    const res = computeDiscount(promoCode, subtotal, settings.promos);
     if (res.ok) {
       discount = res.discount;
       appliedPromo = res.promo.code;
@@ -66,11 +70,11 @@ export async function POST(req: NextRequest) {
   }
 
   const shipping_fee =
-    subtotal - discount >= site.freeShippingAbove ? 0 : site.shippingFee;
+    subtotal - discount >= settings.freeShippingAbove ? 0 : settings.shippingFee;
   const total = Math.max(0, subtotal - discount) + shipping_fee;
 
   if (paymentMethod === "cod") {
-    const gate = codEligible(address.pincode, total);
+    const gate = codEligible(address.pincode, total, settings.codOrderCap);
     if (!gate.ok)
       return NextResponse.json({ ok: false, error: gate.reason }, { status: 400 });
   }
@@ -99,6 +103,7 @@ export async function POST(req: NextRequest) {
 
   if (paymentMethod === "cod") {
     await saveOrder(order);
+    await adjustStockForOrder(orderItems);
     await fireWebhook("order-placed", { order_id: order.id, total, payment_method: "cod", phone: address.phone });
     await fireWebhook("cod-confirmation-needed", {
       order_id: order.id,
@@ -118,6 +123,7 @@ export async function POST(req: NextRequest) {
     // Dev fallback: no gateway keys yet — order is created and the client
     // completes it through /api/payment/simulate (blocked in production).
     await saveOrder(order);
+    await adjustStockForOrder(orderItems);
     return NextResponse.json({ ok: true, orderId: order.id, flow: "simulate" });
   }
 
@@ -146,6 +152,7 @@ export async function POST(req: NextRequest) {
   const rzpOrder = (await rzpRes.json()) as { id: string };
   order.razorpay_order_id = rzpOrder.id;
   await saveOrder(order);
+  await adjustStockForOrder(orderItems);
 
   return NextResponse.json({
     ok: true,
