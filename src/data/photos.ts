@@ -111,10 +111,10 @@ const MAP: Record<string, LookKey> = {
   mu01: "ganesha-brass", mu12: "conch",
   // vastu
   vw04: "tumbles", vw05: "selenite", vw06: "pyrite",
-  // zodiac sign bracelets (by their lead stone)
-  zs02: "sunstone", zs03: "green-aventurine", zs05: "tiger-eye", zs06: "carnelian",
-  zs07: "lapis", zs08: "obsidian", zs09: "obsidian", zs10: "garnet-stones",
-  zs11: "amethyst", zs12: "citrine", zs01: "bracelet-generic", zs04: "bracelet-generic",
+  // zodiac sign bracelets: ten signs carry real product creatives set in
+  // catalog/zodiac.ts — only the two not-yet-shot signs use stock looks
+  zs07: "lapis", // libra
+  zs09: "obsidian", // sagittarius
   // accessories
   ac01: "gold-ring", ac02: "gold-ring", ac03: "gold-ring", ac09: "gold-ring",
   ac10: "evil-eye",

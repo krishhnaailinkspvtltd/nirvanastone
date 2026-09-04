@@ -5,33 +5,39 @@ import { CARE, mk } from "./shared";
 
 const SIGN_STONES: Record<Zodiac, { stones: string; hindi: string; line: string }> = {
   aries: { stones: "Red Jasper & Tiger Eye", hindi: "Mesh", line: "Mars-ruled fire needs grounding and aim — endurance from jasper, focus from tiger eye" },
-  taurus: { stones: "Sunstone & Carnelian", hindi: "Vrishabh", line: "Venus-ruled earth warms to sunstone's optimism and carnelian's creative spark" },
+  taurus: { stones: "Rose Quartz & Carnelian", hindi: "Vrishabh", line: "Venus-ruled earth softens with rose quartz's heart and lights up with carnelian's spark" },
   gemini: { stones: "Green Aventurine & Milky Quartz", hindi: "Mithun", line: "Mercury's twins get opportunity from aventurine and clarity from milky quartz" },
-  cancer: { stones: "Howlite & Milky Quartz", hindi: "Kark", line: "the Moon's sign settles with howlite's calm and quartz's soft light" },
-  leo: { stones: "Tiger Eye & Citrine", hindi: "Singh", line: "the Sun's sign doubles down — tiger eye's golden courage, citrine's radiant abundance" },
+  cancer: { stones: "Howlite & Milky Quartz", hindi: "Karka", line: "the Moon's sign settles with howlite's calm and quartz's soft light" },
+  leo: { stones: "Tiger Eye & Citrine", hindi: "Simha", line: "the Sun's sign doubles down — tiger eye's golden courage, citrine's radiant abundance" },
   virgo: { stones: "Carnelian & Milky Quartz", hindi: "Kanya", line: "Mercury's perfectionist gains warmth from carnelian and ease from quartz" },
   libra: { stones: "Lapis Lazuli & Howlite", hindi: "Tula", line: "Venus's scales balance on lapis's honest speech and howlite's patience" },
-  scorpio: { stones: "Black Obsidian & Moonstone", hindi: "Vrishchik", line: "Mars-ruled depth is shielded by obsidian and softened by moonstone" },
+  scorpio: { stones: "Black Onyx & White Howlite", hindi: "Vrishchik", line: "Mars-ruled depth is grounded by black onyx and cooled by howlite's patience" },
   sagittarius: { stones: "Black Obsidian & Lapis Lazuli", hindi: "Dhanu", line: "Jupiter's archer stays grounded with obsidian while lapis keeps the aim true" },
-  capricorn: { stones: "Garnet & Milky Quartz", hindi: "Makar", line: "Saturn's climber is fuelled by garnet's fire and steadied by quartz" },
-  aquarius: { stones: "Amethyst & Lapis Lazuli", hindi: "Kumbh", line: "Saturn's visionary thinks clearer with amethyst's calm and lapis's insight" },
+  capricorn: { stones: "Carnelian & Milky Quartz", hindi: "Makar", line: "Saturn's climber is fuelled by carnelian's drive and steadied by milky quartz" },
+  aquarius: { stones: "Amethyst & Sodalite", hindi: "Kumbh", line: "Saturn's visionary thinks clearer with amethyst's calm and sodalite's insight" },
   pisces: { stones: "Citrine & Tiger Eye", hindi: "Meen", line: "Jupiter's dreamer gets sunshine from citrine and follow-through from tiger eye" },
 };
+
+/** Signs with real product creatives in /public/products/zodiac/. */
+const PHOTO_SIGNS = new Set<Zodiac>([
+  "aries", "taurus", "gemini", "cancer", "leo", "virgo",
+  "scorpio", "capricorn", "aquarius", "pisces",
+]);
 
 const signBracelets: Product[] = (Object.entries(SIGN_STONES) as [Zodiac, (typeof SIGN_STONES)[Zodiac]][]).map(
   ([sign, s], i) => {
     const label = sign[0].toUpperCase() + sign.slice(1);
-    return mk({
+    const p = mk({
       id: `zs${String(i + 1).padStart(2, "0")}`,
       slug: `${sign}-rashi-bracelet`,
       name: `${label} (${s.hindi} Rashi) Bracelet — ${s.stones}`,
       category: "zodiac",
       subcategory: `${label} Rashi`,
-      description: `The classical stone pairing for ${label} (${s.hindi} rashi): ${s.line}. Natural 8 mm beads with a small ${label} charm.`,
+      description: `The classical stone pairing for ${label} (${s.hindi} rashi): ${s.line}. Natural 8 mm beads around a black onyx centre bead engraved with the ${label} glyph in gold — and a free raw selenite plate in the box to rest it on overnight.`,
       benefits: [
         `${s.stones} — the pairing traditionally prescribed for ${label}`,
-        "Natural stones with a stainless zodiac charm",
-        "8 mm beads on double-strung elastic",
+        `Black onyx centre bead with the ${label} sign engraved in gold`,
+        "Free raw selenite plate included — the cleansing base for your bracelet",
       ],
       care: CARE.crystal,
       price: 749,
@@ -41,6 +47,17 @@ const signBracelets: Product[] = (Object.entries(SIGN_STONES) as [Zodiac, (typeo
       art: "zodiac",
       bestseller: sign === "leo" || sign === "capricorn",
     });
+    if (PHOTO_SIGNS.has(sign)) {
+      p.images = [
+        {
+          url: `/products/zodiac/${sign}.jpg`,
+          alt: `${label} (${s.hindi}) rashi bracelet — ${s.stones} with free raw selenite plate`,
+          is_placeholder: false,
+        },
+        p.images[0],
+      ];
+    }
+    return p;
   },
 );
 
