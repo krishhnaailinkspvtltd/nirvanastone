@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { IssueCertificate } from "@/components/admin/IssueCertificate";
 import { OrderActions } from "@/components/admin/OrderActions";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { formatINR } from "@/lib/catalog";
@@ -91,7 +92,10 @@ export default async function AdminOrderDetail({
           </section>
         </div>
 
-        <OrderActions order={order} />
+        <div>
+          <OrderActions order={order} />
+          <IssueCertificate orderId={order.id} items={order.items} />
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { products as seedProducts } from "@/data/products";
 import type { Product } from "./types";
 import { getKV, setKV } from "./kv";
@@ -28,8 +29,8 @@ async function saveOverrides(o: Overrides): Promise<void> {
   await setKV(KEY, o);
 }
 
-/** Storefront catalog: merged, deleted items removed. */
-export async function getCatalog(): Promise<Product[]> {
+/** Storefront catalog: merged, deleted items removed. Memoized per request. */
+export const getCatalog = cache(async (): Promise<Product[]> => {
   const { patches, custom } = await getOverrides();
   const merged = seedProducts
     .map((p) => {
@@ -41,7 +42,7 @@ export async function getCatalog(): Promise<Product[]> {
     })
     .filter((p): p is Product => p !== null);
   return [...merged, ...custom.filter((c) => !patches[c.id]?.deleted)];
-}
+});
 
 export interface AdminRow {
   product: Product;

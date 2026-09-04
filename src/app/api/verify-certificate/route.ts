@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { certificates } from "@/data/certificates";
 import { getProductById } from "@/lib/catalog";
 import { getCatalog } from "@/lib/catalog-store";
+import { findCertificate } from "@/lib/cert-store";
 
 /**
  * Certificate lookup — backed by a real dataset (seed today, the Supabase
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   if (!code)
     return NextResponse.json({ ok: false, error: "Enter a certificate code." }, { status: 400 });
 
-  const cert = certificates.find((c) => c.certificate_code === code);
+  const cert = await findCertificate(code);
   if (!cert)
     return NextResponse.json({
       ok: true,

@@ -67,6 +67,10 @@ there and applies to the live store immediately, no rebuild:
 - **Products** — edit any of the 205 seed products (price, MRP, stock,
   copy, tags, images, variants), hide them, reset them to original, or
   create brand-new products; stock decrements automatically on each order
+- **Reviews** — customers submit reviews on product pages; they wait here
+  for approval and go live on the product the moment you approve
+- **Certificates** — issue a unique verifiable code per dispatched unit
+  from the order screen; customers check it at /verify-certificate
 - **Settings** — shipping fee, free-shipping threshold, COD cap, promo codes
 
 Admin state lives in the same dual store as orders: Supabase (`kv_store`
@@ -113,6 +117,11 @@ there until Supabase is set up).
 ## Roadmap (per build brief)
 
 - ✅ Phase 1 — storefront, cart, checkout (Razorpay + COD), order flow, seed data
-- ✅ Phase 2 — AI recommender, certificate verification, reviews, webhook surface
-- ⬜ Phase 3 — admin panel (products/inventory/orders), blog CMS, Supabase auth accounts
-- ⬜ Phase 4 — Core Web Vitals pass with real imagery, accessibility audit, copy review
+- ✅ Phase 2 — AI recommender, certificate verification + admin issuance,
+  customer reviews with moderation, webhook surface
+- ✅ Phase 3 — admin panel (products/inventory/orders/settings/reviews/certificates),
+  blog with schema markup, policy pages
+- ✅ Phase 4 — per-request catalog caching, loading states, skip-link &
+  focus a11y, optimized imagery pipeline
+- ⬜ Post-launch — provision Supabase (persistence on Vercel + customer
+  accounts), Razorpay live keys, n8n WhatsApp flows, real product photography

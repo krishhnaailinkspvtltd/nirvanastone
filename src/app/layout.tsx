@@ -43,6 +43,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${fraunces.variable} ${karla.variable}`}>
       <body>
+        <a
+          href="#main"
+          className="sr-only z-50 rounded-lg bg-gold px-4 py-2 font-bold text-[#2b1608] focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
+        >
+          Skip to content
+        </a>
         <CartProvider>
           <Header />
           <main id="main">{children}</main>

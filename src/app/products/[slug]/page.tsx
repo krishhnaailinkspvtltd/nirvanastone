@@ -11,14 +11,14 @@ import { Stars } from "@/components/Stars";
 import { site } from "@/config/site";
 import { certificates } from "@/data/certificates";
 import { categoryFaqs } from "@/data/faqs";
+import { ReviewForm } from "@/components/ReviewForm";
 import {
   getProduct,
   getProductById,
-  productReviews,
-  ratingSummary,
   relatedProducts,
 } from "@/lib/catalog";
 import { getCatalog } from "@/lib/catalog-store";
+import { getMergedReviews } from "@/lib/reviews-store";
 import { CATEGORIES } from "@/lib/taxonomy";
 
 // Catalog is runtime-editable from /admin — render per request.
@@ -87,8 +87,12 @@ export default async function ProductPage({
   const p = getProduct(catalog, slug);
   if (!p) notFound();
 
-  const { count, avg } = ratingSummary(p.id);
-  const revs = productReviews(p.id);
+  const revs = await getMergedReviews(p.id);
+  const count = revs.length;
+  const avg =
+    count > 0
+      ? Math.round((revs.reduce((s, r) => s + r.rating, 0) / count) * 10) / 10
+      : 0;
   const related = relatedProducts(catalog, p);
   const faqs = categoryFaqs[p.category];
   const sampleCert = certificates.find((c) => c.product_id === p.id);
@@ -267,6 +271,7 @@ export default async function ProductPage({
             No reviews yet — be the first after your order arrives.
           </p>
         )}
+        <ReviewForm productId={p.id} />
       </section>
 
       {/* Related */}

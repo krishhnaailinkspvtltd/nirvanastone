@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { site } from "@/config/site";
 import { promos as seedPromos, type Promo } from "./promos";
 import { getKV, setKV } from "./kv";
@@ -18,10 +19,10 @@ const DEFAULTS: StoreSettings = {
   promos: seedPromos,
 };
 
-export async function getSettings(): Promise<StoreSettings> {
+export const getSettings = cache(async (): Promise<StoreSettings> => {
   const saved = await getKV<Partial<StoreSettings>>("settings");
   return { ...DEFAULTS, ...saved, promos: saved?.promos ?? DEFAULTS.promos };
-}
+});
 
 export async function saveSettings(next: StoreSettings): Promise<void> {
   await setKV("settings", next);
