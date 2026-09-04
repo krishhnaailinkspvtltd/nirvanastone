@@ -12,7 +12,13 @@ export const site = {
   tagline: "Rudraksha, gemstones & vastu — certified, energised, delivered",
   legalName: "Nirvana Wellness Pvt. Ltd.", // [PLACEHOLDER] confirm the registered entity name
   domain: "nirvana.example", // [PLACEHOLDER]
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  // Empty-string safe: an env var that exists but is blank (easy to do in
+  // Vercel's dashboard) must not reach `new URL()`. Falls back to the
+  // deployment's own URL on Vercel, then localhost.
+  url:
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
+    "http://localhost:3000",
   whatsappNumber: "919999999999", // [PLACEHOLDER] country code + number, digits only
   supportEmail: "care@nirvana.example", // [PLACEHOLDER]
   address: "Jaipur, Rajasthan, India", // [PLACEHOLDER]

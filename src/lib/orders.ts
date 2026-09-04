@@ -12,7 +12,12 @@ import type { Order } from "./types";
  *    browse → cart → checkout → track flow works before Supabase is provisioned
  */
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+// On Vercel the deployment filesystem is read-only — only /tmp is writable,
+// and it does not persist between invocations. Fine for demos; configure
+// Supabase for real order persistence in production.
+const DATA_DIR = process.env.VERCEL
+  ? path.join("/tmp", "nirvana-data")
+  : path.join(process.cwd(), ".data");
 const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
 
 function supabase() {
