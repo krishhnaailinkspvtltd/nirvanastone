@@ -11,3 +11,7 @@ Run `python3 -m http.server 8080` from this directory and open http://localhost:
 **Demo only**: Prices are reference values, images from the supplied directory require usage rights review, and the cart prepares an enquiry rather than taking payment. Do not configure real checkout or claim certifications before validation.
 
 See `DESIGN_SOURCES.md` for researched open-source references, and `ZODIAC_CATEGORY.md` for symbolic-benefit information.
+
+
+## Cinematic Motion v5
+The homepage includes an editorial collection-story carousel, dynamic scroll text, a lazy WebGL crystal sculpture, scroll-aware gallery, and stronger intro/loading sequence. Read `MOTION_RESEARCH.md` for the reviewed open-source references, license caveats, accessibility and performance notes.
